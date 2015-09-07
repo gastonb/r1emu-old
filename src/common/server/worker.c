@@ -442,6 +442,10 @@ Worker_processOneRequest (
         break;
     }
 
+    for (zframe_t *frame = zmsg_first(msg); frame != NULL; frame = zmsg_next(msg)) {
+        buffer_print(zframe_data(frame), zframe_size(frame), NULL);
+    }
+
     return true;
 }
 

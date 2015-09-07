@@ -32,5 +32,7 @@ typedef struct {
     uint32_t id;
 }   ItemPkt;
 
+typedef struct Item Item;
+
 
 // ----------- Functions ------------

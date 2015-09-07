@@ -39,6 +39,8 @@ static PacketHandlerState barrackHandlerCommanderDestroy (Worker *self, Session 
 static PacketHandlerState barrackHandlerCommanderMove    (Worker *self, Session *session, uint8_t *packet, size_t packetSize, zmsg_t *reply);
 /** Request for the player to enter in game */
 static PacketHandlerState barrackHandlerStartGame        (Worker *self, Session *session, uint8_t *packet, size_t packetSize, zmsg_t *reply);
+/** Request for the player to logout */
+static PacketHandlerState barrackHandlerLogout        (Worker *self, Session *session, uint8_t *packet, size_t packetSize, zmsg_t *reply);
 
 /**
  * @brief barrackHandlers is a global table containing all the barrack handlers.
@@ -57,6 +59,7 @@ const PacketHandler barrackHandlers[PACKET_TYPE_COUNT] = {
     REGISTER_PACKET_HANDLER(CB_COMMANDER_MOVE,     barrackHandlerCommanderMove),
     // REGISTER_PACKET_HANDLER(CB_JUMP,               barrackHandlerJump),
     REGISTER_PACKET_HANDLER(CB_START_GAME,         barrackHandlerStartGame),
+    REGISTER_PACKET_HANDLER(CB_LOGOUT,         barrackHandlerLogout),
 
     #undef REGISTER_PACKET_HANDLER
 };
@@ -268,19 +271,19 @@ barrackHandlerStartBarrack(
     // CHECK_CLIENT_PACKET_SIZE(*clientPacket, packetSize, CB_START_BARRACK);
 
     // IES Modify List
-    /*
-    BarrackBuilder_iesModifyList(
+/*
+    barrackBuilderIesModifyList(
         reply
     );
-    */
+*/
 
     // ??
-    /*
-    BarrackBuilder_normalUnk1(
+
+    barrackBuilderNormalUnk1(
         session->socket.accountId,
         reply
     );
-    */
+
 
     // Connect to S Server at localhost:1337 and localhost:1338
     barrackBuilderServerEntry(
@@ -314,8 +317,15 @@ static PacketHandlerState barrackHandlerCurrentBarrack(
     //    4E00 03000000 F7030000 D1A8014400000000 03000068 42F0968F 41000070 4111E334 3FCF2635 BF
     //    size pktType  checksum     accountId               float    float    float    float
 
+    buffer_print (packet, packetSize, NULL);
+
     barrackBuilderPetInformation(reply);
     barrackBuilderZoneTraffics(1002, reply);
+
+    barrackBuilderNormalUnk1(
+        session->socket.accountId,
+        reply
+    );
 
     return PACKET_HANDLER_OK;
 }
@@ -481,7 +491,7 @@ static PacketHandlerState barrackHandlerCommanderCreate(
     commanderInfo->pos = PositionXYZ_decl(19.0, 28.0, 29.0);
 
     // Default MapId : West Siauliai Woods
-    session->game.commanderSession.mapId = 1002;
+    session->game.commanderSession.mapId = 1001;
 
     // Add the character to the account
     session->game.barrackSession.charactersCreatedCount++;
@@ -503,6 +513,33 @@ static PacketHandlerState barrackHandlerCommanderCreate(
         .dir2 = commanderDir,
     };
     barrackBuilderCommanderCreate(&commanderCreate, reply);
+
+    return PACKET_HANDLER_UPDATE_SESSION;
+}
+
+static PacketHandlerState barrackHandlerLogout(
+    Worker *self,
+    Session *session,
+    uint8_t *packet,
+    size_t packetSize,
+    zmsg_t *reply)
+{
+    /*
+    #pragma pack(push, 1)
+    struct {
+        uint8_t login[ACCOUNT_SESSION_LOGIN_MAXSIZE];
+        uint8_t md5Password[17];
+        uint8_t unk1[5];
+    } *clientPacket = (void *) packet;
+    #pragma pack(pop)
+
+    CHECK_CLIENT_PACKET_SIZE(*clientPacket, packetSize, CB_LOGOUT);
+    */
+
+
+    barrackBuilderLogoutOk(
+        reply
+    );
 
     return PACKET_HANDLER_UPDATE_SESSION;
 }

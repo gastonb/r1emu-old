@@ -16,6 +16,29 @@
 #include "common/packet/packet.h"
 #include "common/packet/packet_stream.h"
 #include "common/packet/packet_type.h"
+#include "common/commander/commander.h"
+
+/**
+ * Structure of variables needed for BC_COMMANDER_CREATE
+ */
+ #pragma pack(push, 1)
+typedef struct CommanderBarrackInfo {
+    CommanderPkt commander;
+    uint64_t socialInfoId;
+    uint16_t commanderPosition;
+    uint16_t mapId;
+    uint32_t unk4;
+    uint32_t unk5;
+    uint32_t maxXP;
+    uint32_t unk6;
+    PositionXYZ pos;
+    PositionXZ dir;
+    PositionXYZ pos2;
+    PositionXZ dir2;
+    uint32_t unk8;
+    PacketB PB;
+} CommanderBarrackInfo;
+#pragma pack(pop)
 
 void barrackBuilderLoginOk(
     uint64_t accountId,
@@ -46,6 +69,22 @@ void barrackBuilderLoginOk(
         replyPacket.accountPrivileges = accountPrivileges;
         strncpy(replyPacket.accountLogin, accountLogin, sizeof(replyPacket.accountLogin));
         strncpy(replyPacket.sessionKey, sessionKey, sizeof(replyPacket.sessionKey));
+    }
+}
+
+void barrackBuilderLogoutOk(zmsg_t *replyMsg) {
+    #pragma pack(push, 1)
+    struct {
+        ServerPacketHeader header;
+    } replyPacket;
+    #pragma pack(pop)
+
+    PacketType packetType = BC_LOGOUTOK;
+    CHECK_SERVER_PACKET_SIZE(replyPacket, packetType);
+
+    BUILD_REPLY_PACKET(replyPacket, replyMsg)
+    {
+        serverPacketHeaderInit(&replyPacket.header, packetType);
     }
 }
 
@@ -129,9 +168,38 @@ void barrackBuilderNormalUnk1(uint64_t accountId, zmsg_t *replyMsg) {
     {
         packetNormalHeaderInit(&replyPacket.normalHeader, BC_NORMAL_UNKNOWN_1, sizeof(replyPacket));
         replyPacket.accountId = accountId;
+        replyPacket.unk1 = 0x0B; // ICBT
+        replyPacket.unk2 = 0;
+    }
+
+    size_t captureSize;
+    void *capture = dumpToMem(
+        "[03:10:20][main.c:55 in CNetUsr__PacketHandler_0]  4F 00 FF FF FF FF 1D 00 04 00 00 00 4B 0A 0F 06 | O...........K...\n"
+        "[03:10:20][main.c:55 in CNetUsr__PacketHandler_0]  01 00 10 01 0B 00 00 00 00 00 00 00 00          | .............\n",
+        NULL, &captureSize
+    );
+
+    compareMem(&replyPacket, sizeof (replyPacket), capture, captureSize);
+}
+
+void barrackBuilderNormalCommanderInfo(uint64_t accountId, zmsg_t *replyMsg) {
+    #pragma pack(push, 1)
+    struct {
+        PacketNormalHeader normalHeader;
+        uint64_t accountId;
+        uint8_t unk1;
+        uint64_t unk2;
+    } replyPacket;
+    #pragma pack(pop)
+
+    BUILD_REPLY_PACKET(replyPacket, replyMsg)
+    {
+        packetNormalHeaderInit(&replyPacket.normalHeader, BC_NORMAL_UNKNOWN_1, sizeof(replyPacket));
+        replyPacket.accountId = accountId;
         replyPacket.unk1 = 0; // ICBT
         replyPacket.unk2 = 0;
     }
+
 }
 
 void barrackBuilderIesModifyList(zmsg_t *replyMsg) {
@@ -144,7 +212,7 @@ void barrackBuilderIesModifyList(zmsg_t *replyMsg) {
 
     // PacketType packetType = BC_IES_MODIFY_LIST;
     // CHECK_SERVER_PACKET_SIZE (replyPacket, packetType);
-    // BUILD_REPLY_PACKET(replyPacket, replyMsg)
+    BUILD_REPLY_PACKET(replyPacket, replyMsg)
     {
         size_t memSize;
 
@@ -207,12 +275,28 @@ void barrackBuilderServerEntry(
 }
 
 void barrackBuilderCommanderList(uint64_t accountId, zmsg_t *replyMsg) {
+
+    int commandersCount = 6;
+
     #pragma pack(push, 1)
     struct {
         VariableSizePacketHeader variableSizeHeader;
         uint64_t accountId;
         uint8_t unk1;
         uint8_t commandersCount;
+        uint8_t familyName [COMMANDER_FAMILY_NAME_SIZE];
+        uint16_t AccInfoLength;
+        uint16_t AccInfoType1;
+        float AccInfoData1;
+        uint16_t AccInfoType2;
+        float AccInfoData2;
+        uint16_t AccInfoType3;
+        float AccInfoData3;
+/*
+        uint16_t AccInfoType4;
+        float AccInfoData4;
+*/
+        CommanderBarrackInfo commanders[commandersCount];
     } replyPacket;
     #pragma pack(pop)
 
@@ -223,8 +307,256 @@ void barrackBuilderCommanderList(uint64_t accountId, zmsg_t *replyMsg) {
     {
         variableSizePacketHeaderInit(&replyPacket.variableSizeHeader, packetType, sizeof(replyPacket));
         replyPacket.accountId = accountId;
-        replyPacket.unk1 = 1; // ICBT - equal to 1 or 4
-        replyPacket.commandersCount = 0;
+        replyPacket.unk1 = 3; // ICBT - equal to 1 or 4
+        replyPacket.commandersCount = commandersCount;
+
+
+        /*----------------------
+         Test Code
+        ------------------------*/
+
+        // Family name
+        strncpy(replyPacket.familyName, "MyTeamName", sizeof(replyPacket.familyName));
+        // Account Info
+        replyPacket.AccInfoLength = SWAP_UINT16(0x1200);
+        replyPacket.AccInfoType1 = SWAP_UINT16(0x940e); // 94 0E = Medal (iCoin)
+        replyPacket.AccInfoData1 = 5.5;
+        replyPacket.AccInfoType2 = SWAP_UINT16(0x970e); // 97 0E = GiftMedal
+        replyPacket.AccInfoData2 = 10.0;
+        replyPacket.AccInfoType3 = SWAP_UINT16(0x950e); // 95 0E = ReceiveGiftMedal
+        replyPacket.AccInfoData3 = 5.0;
+        /* -- Test
+        replyPacket.AccInfoType4 = SWAP_UINT16(0x960e); // 96 0E = SelectedBarrack
+        replyPacket.AccInfoData4 = 2.0;
+        */
+        // Commanders list
+        for (int commanderIndex = 0; commanderIndex < replyPacket.commandersCount; commanderIndex++) {
+            CommanderBarrackInfo *currentCommanderBarrackInfo = &replyPacket.commanders[commanderIndex];
+            CommanderPkt *currentCommander = &currentCommanderBarrackInfo->commander;
+            commanderInit(currentCommander);
+            // Set some info
+            if (commanderIndex >= 0) {
+                if (commanderIndex == 0) strncpy(currentCommander->commanderName, "Memento1", sizeof(currentCommander->commanderName));
+                if (commanderIndex == 1) strncpy(currentCommander->commanderName, "Memento2", sizeof(currentCommander->commanderName));
+                if (commanderIndex == 2) strncpy(currentCommander->commanderName, "Memento3", sizeof(currentCommander->commanderName));
+                if (commanderIndex == 3) strncpy(currentCommander->commanderName, "Memento4", sizeof(currentCommander->commanderName));
+                if (commanderIndex == 4) strncpy(currentCommander->commanderName, "Memento5", sizeof(currentCommander->commanderName));
+                if (commanderIndex == 5) strncpy(currentCommander->commanderName, "Memento6", sizeof(currentCommander->commanderName));
+                if (commanderIndex == 6) strncpy(currentCommander->commanderName, "Memento7", sizeof(currentCommander->commanderName));
+                if (commanderIndex == 7) strncpy(currentCommander->commanderName, "Memento8", sizeof(currentCommander->commanderName));
+                if (commanderIndex == 8) strncpy(currentCommander->commanderName, "Memento9", sizeof(currentCommander->commanderName));
+                if (commanderIndex == 9) strncpy(currentCommander->commanderName, "Memento10", sizeof(currentCommander->commanderName));
+                if (commanderIndex == 10) strncpy(currentCommander->commanderName, "Memento11", sizeof(currentCommander->commanderName));
+
+                currentCommander->accountId = 0x0; // Not needed
+                currentCommander->classId = COMMANDER_CLASS_CLERIC;
+                currentCommander->unk4 = 0x0;
+                currentCommander->jobId = COMMANDER_JOB_CLERIC;
+                currentCommander->level = 1;
+                currentCommander->gender = COMMANDER_GENDER_FEMALE;
+                currentCommander->hairId = 0x2E;
+
+                currentCommander->equipment.head_top = SWAP_UINT32(0x02000000);
+                currentCommander->equipment.head_middle = SWAP_UINT32(0x02000000);
+                currentCommander->equipment.itemUnk1 = SWAP_UINT32(0x04000000);
+                currentCommander->equipment.body_armor = SWAP_UINT32(0x9d1a0800);
+                currentCommander->equipment.gloves = SWAP_UINT32(0x06000000);
+                currentCommander->equipment.boots = SWAP_UINT32(0x07000000);
+                currentCommander->equipment.itemUnk2 = SWAP_UINT32(0x10270000);
+                currentCommander->equipment.bracelet = SWAP_UINT32(0xf82a0000);
+                currentCommander->equipment.weapon = SWAP_UINT32(0x4d720200);
+                currentCommander->equipment.shield = SWAP_UINT32(0x7c969800);
+                currentCommander->equipment.costume = SWAP_UINT32(0x04000000);
+                currentCommander->equipment.itemUnk3 = SWAP_UINT32(0x09000000);
+                currentCommander->equipment.itemUnk4 = SWAP_UINT32(0x09000000);
+                currentCommander->equipment.itemUnk5 = SWAP_UINT32(0x04000000);
+                currentCommander->equipment.leg_armor = SWAP_UINT32(0x8df30700);
+                currentCommander->equipment.itemUnk6 = SWAP_UINT32(0x09000000);
+                currentCommander->equipment.itemUnk7 = SWAP_UINT32(0x09000000);
+                currentCommander->equipment.ring_left = SWAP_UINT32(0x09000000);
+                currentCommander->equipment.ring_right = SWAP_UINT32(0x09000000);
+                currentCommander->equipment.necklace = SWAP_UINT32(0x0A000000);
+
+
+                if (commanderIndex == 0) currentCommanderBarrackInfo->socialInfoId = SWAP_UINT64(0xf41100007d000000); // CharUniqueId?
+                if (commanderIndex == 1) currentCommanderBarrackInfo->socialInfoId = SWAP_UINT64(0xf51100007d000000); // CharUniqueId?
+                if (commanderIndex == 2) currentCommanderBarrackInfo->socialInfoId = SWAP_UINT64(0xf61100007d000000); // CharUniqueId?
+                if (commanderIndex == 3) currentCommanderBarrackInfo->socialInfoId = SWAP_UINT64(0xf71100007d000000); // CharUniqueId?
+                if (commanderIndex == 4) currentCommanderBarrackInfo->socialInfoId = SWAP_UINT64(0xf81100007d000000); // CharUniqueId?
+                if (commanderIndex == 5) currentCommanderBarrackInfo->socialInfoId = SWAP_UINT64(0xf91100007d000000); // CharUniqueId?
+                if (commanderIndex == 6) currentCommanderBarrackInfo->socialInfoId = SWAP_UINT64(0xfA1100007d000000); // CharUniqueId?
+                if (commanderIndex == 7) currentCommanderBarrackInfo->socialInfoId = SWAP_UINT64(0xfB1100007d000000); // CharUniqueId?
+                if (commanderIndex == 8) currentCommanderBarrackInfo->socialInfoId = SWAP_UINT64(0xfC1100007d000000); // CharUniqueId?
+                if (commanderIndex == 9) currentCommanderBarrackInfo->socialInfoId = SWAP_UINT64(0xfD1100007d000000); // CharUniqueId?
+                if (commanderIndex == 10) currentCommanderBarrackInfo->socialInfoId = SWAP_UINT64(0xfE1100007d000000); // CharUniqueId?
+                if (commanderIndex == 11) currentCommanderBarrackInfo->socialInfoId = SWAP_UINT64(0xfF1100007d000000); // CharUniqueId?
+                currentCommanderBarrackInfo->commanderPosition = commanderIndex+1; // Commander Index? Seems to be!
+                currentCommanderBarrackInfo->mapId = 1001; //
+                currentCommanderBarrackInfo->unk4 = 0; //
+                currentCommanderBarrackInfo->unk5 = 0;
+                currentCommanderBarrackInfo->maxXP = SWAP_UINT32(0x0c000000);
+                currentCommanderBarrackInfo->unk6 = 0; //
+                /*
+                currentCommanderBarrackInfo->pos.x = -13.0
+                currentCommanderBarrackInfo->pos.y = 28;
+                currentCommanderBarrackInfo->pos.z = 119.0
+                */
+                currentCommanderBarrackInfo->pos.x = 120.0;
+                currentCommanderBarrackInfo->pos.y = 10.0;
+                currentCommanderBarrackInfo->pos.z = 2.0;
+
+                currentCommanderBarrackInfo->dir.x = 0;
+                currentCommanderBarrackInfo->dir.z = 0;
+                /*
+                currentCommanderBarrackInfo->pos2.x = -13.0
+                currentCommanderBarrackInfo->pos2.y = 28;
+                currentCommanderBarrackInfo->pos2.z = 119.0
+                */
+                currentCommanderBarrackInfo->pos2.x = 120.0;
+                currentCommanderBarrackInfo->pos2.y = 10.0;
+                currentCommanderBarrackInfo->pos2.z = 2.0;
+                currentCommanderBarrackInfo->dir2.x = 0;
+                currentCommanderBarrackInfo->dir2.z = 0;
+                currentCommanderBarrackInfo->unk8 = 0; //
+
+
+                currentCommanderBarrackInfo->PB.i_1 = 0;
+                currentCommanderBarrackInfo->PB.i_2 = 0;
+                currentCommanderBarrackInfo->PB.i_3 = 0;
+                currentCommanderBarrackInfo->PB.i_4 = SWAP_UINT64(0x0600030f00000000);
+                currentCommanderBarrackInfo->PB.i_5 = 0;
+                currentCommanderBarrackInfo->PB.i_6 = 0;
+                currentCommanderBarrackInfo->PB.i_7 = 0;
+                currentCommanderBarrackInfo->PB.i_8 = 0;
+                currentCommanderBarrackInfo->PB.i_9 = SWAP_UINT64(0x0600030f00000000);
+                currentCommanderBarrackInfo->PB.i_10 = 0;
+                currentCommanderBarrackInfo->PB.i_11 = 0;
+                currentCommanderBarrackInfo->PB.i_12 = 0;
+                currentCommanderBarrackInfo->PB.i_13 = 0;
+                currentCommanderBarrackInfo->PB.i_14 = 0;
+                currentCommanderBarrackInfo->PB.i_15 = SWAP_UINT64(0x0600030f00000000);
+                currentCommanderBarrackInfo->PB.i_16 = 0;
+                currentCommanderBarrackInfo->PB.i_17 = 0;
+                currentCommanderBarrackInfo->PB.i_18 = 0;
+                currentCommanderBarrackInfo->PB.i_19 = 0;
+                currentCommanderBarrackInfo->PB.i_20 = 0;
+                currentCommanderBarrackInfo->PB.i_21 = 0;
+
+            }
+
+        }
+
+
+
+
+        /*----------------------------
+         End test code
+        ----------------------------*/
+
+        size_t captureSize;
+        void *capture = dumpToMem(
+            "[03:07:13][main.c:30 in writePacketToFile]  0F 00 FF FF FF FF 18 06 4B 0A 0F 06 01 00 10 01 | ........K.......\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  04 03 4D 6F 72 69 69 00 00 00 00 00 00 00 00 00 | ..Morii.........\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 12 00 94 0E 00 00 67 43 97 0E 00 00 20 41 | ........gC.... A\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  95 0E 00 00 A0 40 4D 65 6D 65 6E 74 6F 00 00 00 | .....@Memento...\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 14 27 00 00 A3 0F 02 00 50 00 | .......'......P.\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 30 95 09 00 02 00 00 00 04 00 00 00 BA 1E | ..0.............\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  08 00 81 A9 07 00 9A D0 07 00 10 27 00 00 F8 2A | ...........'...*\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 94 11 03 00 B3 5F 03 00 FE 81 09 00 09 00 | ......._........\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 09 00 00 00 04 00 00 00 93 F3 07 00 09 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 09 00 00 00 F6 2F 09 00 01 30 09 00 C0 E5 | ......./...0....\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  08 00 2E 00 00 00 26 07 00 00 7C 00 00 00 01 00 | ......&...|.....\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  E9 03 03 00 00 00 91 3D 01 00 51 26 06 00 00 00 | .......=..Q&....\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 7D 49 83 41 BD 63 90 41 3F D6 9A BF 00 00 | ..}I.A.c.A?.....\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 7D 49 83 41 BD 63 90 41 3F D6 | ......}I.A.c.A?.\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  9A BF 00 00 00 00 00 00 00 00 00 00 00 00 06 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  03 0F 00 00 00 00 00 00 00 00 0C 00 BA 0E 00 10 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  74 45 03 0F 00 00 00 00 0C 00 BA 0E 00 48 80 45 | tE...........H.E\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  03 0F 00 00 00 00 12 00 BA 0E 00 10 74 45 03 0F | ............tE..\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 0C 0F 00 00 40 40 00 00 00 00 12 00 | ........@@......\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  BA 0E 00 80 6F 45 03 0F 00 00 00 00 0C 0F 00 00 | ....oE..........\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  80 40 12 00 BA 0E 00 A8 82 45 03 0F 00 00 00 00 | .@.......E......\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  0C 0F 00 00 40 40 06 00 03 0F 00 00 00 00 00 00 | ....@@..........\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 12 00 BA 0E 00 48 80 45 03 0F 00 00 | .........H.E....\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 0C 0F 00 00 40 40 00 00 00 00 3B 00 C5 0E | ......@@....;...\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 40 40 BA 0E 00 10 74 45 03 0F 00 00 00 00 | ..@@....tE......\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  84 0F 06 00 53 68 69 6E 65 00 87 0F 09 00 53 68 | ....Shine.....Sh\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  69 6E 65 42 72 61 00 8A 0F 08 00 4D 65 6D 65 6E | ineBra.....Memen\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  74 6F 00 0C 0F 00 00 40 40 12 00 BA 0E 00 10 74 | to.....@@......t\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  45 03 0F 00 00 00 00 0C 0F 00 00 00 40 31 00 BA | E...........@1..\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  0E 00 10 74 45 03 0F 00 00 00 00 84 0F 02 00 43 | ...tE..........C\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 87 0F 09 00 4E 65 63 6B 6C 61 63 65 00 8A 0F | .....Necklace...\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  08 00 4D 65 6D 65 6E 74 6F 00 0C 0F 00 00 40 40 | ..Memento.....@@\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 53 75 6D 69 54 68 72 6F 77 48 61 6D 73 74 | ..SumiThrowHamst\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  65 72 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | er..............\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 13 27 00 00 B9 0B 02 00 01 00 00 00 02 00 | ...'............\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 02 00 00 00 04 00 00 00 9D 1A 08 00 06 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 07 00 00 00 10 27 00 00 F8 2A 00 00 4D 75 | .......'...*..Mu\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  02 00 7C 96 98 00 04 00 00 00 09 00 00 00 09 00 | ..|.............\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 04 00 00 00 8D F3 07 00 09 00 00 00 09 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 09 00 00 00 09 00 00 00 0A 00 00 00 06 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 F4 11 00 00 7D 00 00 00 02 00 FD 03 00 00 | ......}.........\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 0C 00 00 00 00 00 00 00 25 E8 | ..............%.\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  52 C1 65 19 E5 41 39 F4 EF 42 00 00 00 00 00 00 | R.e..A9..B......\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 25 E8 52 C1 65 19 E5 41 39 F4 EF 42 00 00 | ..%.R.e..A9..B..\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  06 00 03 0F 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  06 00 03 0F 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 06 00 03 0F 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 53 75 6D 69 00 00 00 00 00 00 | ......Sumi......\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 16 27 00 00 D3 07 02 00 1E 00 | .......'........\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 56 95 09 00 02 00 00 00 04 00 00 00 9B 1E | ..V.............\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  08 00 6F A5 07 00 9E CC 07 00 10 27 00 00 F8 2A | ..o........'...*\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 40 27 02 00 AF 5F 03 00 2E 7A 09 00 09 00 | ..@'..._...z....\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 09 00 00 00 04 00 00 00 90 F3 07 00 09 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 09 00 00 00 22 2C 09 00 11 2C 09 00 E2 E1 | ......',...,....\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  08 00 24 00 00 00 2F 18 00 00 7D 00 00 00 03 00 | ..$.../...}.....\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  E9 03 00 00 00 00 82 33 00 00 D4 B3 00 00 00 00 | .......3........\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 FC 78 2F 42 BD 63 90 41 C6 01 4A 40 00 00 | ...x/B.c.A..J@..\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 00 00 FC 78 2F 42 BD 63 90 41 C6 01 | .......x/B.c.A..\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  4A 40 00 00 00 00 00 00 00 00 00 00 00 00 06 00 | J@..............\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  03 0F 00 00 00 00 00 00 00 00 12 00 C5 0E 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  40 40 BA 0E 00 60 86 44 03 0F 00 00 00 00 0C 00 | @@...`.D........\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  BA 0E 00 60 86 44 03 0F 00 00 00 00 12 00 C5 0E | ...`.D..........\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 40 BA 0E 00 60 86 44 03 0F 00 00 00 00 | ...@...`.D......\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 0C 00 BA 0E 00 A0 84 44 03 0F 00 00 | ...........D....\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 12 00 C5 0E 00 00 40 40 BA 0E 00 E0 C2 44 | ........@@.....D\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  03 0F 00 00 00 00 06 00 03 0F 00 00 00 00 00 00 | ................\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 00 00 00 12 00 C5 0E 00 00 00 40 BA 0E 00 60 | ...........@...`\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  86 44 03 0F 00 00 00 00 00 00 00 00 0C 00 BA 0E | .D..............\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  00 30 54 45 03 0F 00 00 00 00 0C 00 BA 0E 00 30 | .0TE...........0\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  54 45 03 0F 00 00 00 00 0C 00 BA 0E 00 30 54 45 | TE...........0TE\n"
+            "[03:07:13][main.c:30 in writePacketToFile]  03 0F 00 00 00 00 00 00                         | ........\n",
+            NULL, &captureSize
+        );
+
+        compareMem(&replyPacket, sizeof (replyPacket), capture, captureSize);
     }
 }
 

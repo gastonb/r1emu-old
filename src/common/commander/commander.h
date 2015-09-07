@@ -51,6 +51,41 @@ typedef struct CommanderEquipment {
 #pragma pack(pop)
 
 #pragma pack(push, 1)
+typedef struct {
+    PositionXYZ position;
+    PositionXZ direction;
+} PacketA;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+// This is a dummy struct for test purposes.
+// This should be an Array[20] of Item Properties (length <data>)
+typedef struct {
+    uint16_t i_1;
+    uint16_t i_2;
+    uint16_t i_3;
+    uint64_t i_4;
+    uint16_t i_5;
+    uint16_t i_6;
+    uint16_t i_7;
+    uint16_t i_8;
+    uint64_t i_9;
+    uint16_t i_10;
+    uint16_t i_11;
+    uint16_t i_12;
+    uint16_t i_13;
+    uint16_t i_14;
+    uint64_t i_15;
+    uint16_t i_16;
+    uint16_t i_17;
+    uint16_t i_18;
+    uint16_t i_19;
+    uint16_t i_20;
+    uint16_t i_21; // Not sure if this is an actual Item, or its a 00 00 used as EndOfArray
+} PacketB;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
 /**
  * @brief CommanderPkt is the struct of a commander sent to the client
  */
@@ -97,13 +132,15 @@ typedef enum CommanderJobId
     COMMANDER_JOB_WARRIOR = 1001,
     COMMANDER_JOB_MAGE    = 2001,
     COMMANDER_JOB_ARCHER  = 3001,
-    COMMANDER_JOB_CLERIC  = 4001
+    COMMANDER_JOB_CLERIC  = 4001,
+    COMMANDER_JOB_KRIVIS  = 4003 // CLERIC - KRIVIS
 }   CommanderJobId;
 
 typedef enum CommanderClassId
 {
     COMMANDER_CLASS_WARRIOR = 10001,
     COMMANDER_CLASS_ARCHER  = 10003,
+    COMMANDER_CLASS_UNKOWN  = 10004,
     COMMANDER_CLASS_CLERIC  = 10005,
     COMMANDER_CLASS_MAGE    = 10006,
 
@@ -131,3 +168,8 @@ void commanderInfoInit(CommanderInfo *commander);
  * @brief Dump a CommanderInfo in the console
  */
 void commanderInfoPrint(CommanderInfo *commander);
+
+/**
+ * @brief Initialize a Commander
+ */
+void commanderInit(CommanderPkt *commander);
