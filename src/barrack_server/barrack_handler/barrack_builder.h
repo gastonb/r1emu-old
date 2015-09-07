@@ -149,3 +149,8 @@ void barrackBuilderNormalUnk1(uint64_t accountId, zmsg_t *replyMsg);
  * @brief Logout
  */
 void barrackBuilderLogoutOk(zmsg_t *replyMsg);
+
+/**
+ * @brief Send message to client
+ */
+void barrackBuilderMessage(uint8_t msgType, uint8_t *message, zmsg_t *replyMsg);

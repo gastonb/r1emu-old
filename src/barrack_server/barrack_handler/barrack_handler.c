@@ -84,6 +84,9 @@ static PacketHandlerState barrackHandlerLogin(
     // authenticate here
     // TODO
 
+
+
+
     // authentication OK!
     session->socket.authenticated = true;
 
@@ -96,6 +99,8 @@ static PacketHandlerState barrackHandlerLogin(
 
     info("AccountID %llx generated !", session->socket.accountId);
 
+    barrackBuilderMessage(0x0, session->game.accountSession.login, reply);
+/*
     barrackBuilderLoginOk(
         session->socket.accountId,
         session->game.accountSession.login,
@@ -103,7 +108,7 @@ static PacketHandlerState barrackHandlerLogin(
         session->game.accountSession.privilege,
         reply
     );
-
+*/
     return PACKET_HANDLER_UPDATE_SESSION;
 }
 
