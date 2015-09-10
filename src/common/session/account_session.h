@@ -44,6 +44,15 @@ struct AccountSession {
 
     // Account privilege level
     AccountSessionPrivileges privilege;
+
+    uint64_t accountId;
+    bool isBanned;
+    time_t timeBanned;
+    float credits;
+    time_t timeLastLogin;
+    uint8_t familyName [64]; ///TODO SIZE
+    uint32_t barrackType;
+
 };
 
 typedef struct AccountSession AccountSession;

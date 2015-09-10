@@ -218,3 +218,5 @@ zlist_t *redisGetClientsWithinDistance(
     PositionXZ *position,
     float range,
     char *socketIdNoInclude);
+
+bool redisGetGameSessionByAccountId (Redis *self, uint64_t accountId, GameSession *gameSession);

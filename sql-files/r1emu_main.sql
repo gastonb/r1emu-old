@@ -15,13 +15,10 @@ CREATE TABLE IF NOT EXISTS `accounts` (
   `is_banned` enum('n','y') NOT NULL DEFAULT 'n',
   `time_banned` datetime NOT NULL,
   `credits` float NOT NULL DEFAULT '0',
-  `priviledge_level` int(11) NOT NULL DEFAULT '3',
+  `privilege_level` int(11) NOT NULL DEFAULT '3',
   `time_last_login` datetime NOT NULL,
   `family_name` varchar(64) NOT NULL,
   `barrack_type` int(11) NOT NULL,
-  `eqslot_head_top` int(11) NOT NULL DEFAULT '0',
-  `eqslot_head_middle` int(11) NOT NULL DEFAULT '0',
-  `eqslot_unkown_1` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`account_id`),
   KEY `acc_name-passwd` (`account_name`,`passwd`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;

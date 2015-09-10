@@ -694,3 +694,63 @@ cleanup:
 
     return result;
 }
+
+/// Not used, needs some work. Probably not needed any longer.
+bool redisGetGameSessionByAccountId (Redis *self, uint64_t accountId, GameSession *gameSession) {
+    bool result = true;
+    redisReply *reply = NULL;
+
+    reply = redisCommandDbg(self,
+        "SCAN 0 MATCH zone*:map*:acc%llx", accountId);
+
+    if (!reply) {
+        error("Redis error encountered : The request is invalid.");
+        result = false;
+        goto cleanup;
+    }
+
+    switch (reply->type)
+    {
+        case REDIS_REPLY_ERROR:
+            error("Redis error encountered : %s", reply->str);
+            result = false;
+            goto cleanup;
+            break;
+
+        case REDIS_REPLY_STATUS:
+            // info("Redis status : %s", reply->str);
+            break;
+
+        case REDIS_REPLY_ARRAY: {
+            // Check the number of elements retrieved
+            if (reply->elements < 2) {
+                error("Wrong number of elements received.");
+                result = false;
+                goto cleanup;
+            }
+
+            // Check if any element of the reply is NULL
+            size_t elementIndex;
+            if ((elementIndex = redisAnyElementIsNull (reply->element, reply->elements)) != -1) {
+                error("Element <%s> returned by Redis is NULL.", redisGameSessionsStr[elementIndex]);
+                result = false;
+                goto cleanup;
+            }
+        }
+        break;
+
+        default :
+            error("Unexpected Redis status (%d).", reply->type);
+            result = false;
+            goto cleanup;
+            break;
+    }
+
+
+cleanup:
+    if (reply) {
+        redisReplyDestroy(&reply);
+    }
+
+    return result;
+}

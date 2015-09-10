@@ -23,6 +23,28 @@
 #include "common/server/worker.h"
 
 /**
+ * Structure of variables needed for BC_COMMANDER_CREATE
+ */
+ #pragma pack(push, 1)
+typedef struct CommanderBarrackInfo {
+    CommanderPkt commander;
+    uint64_t socialInfoId;
+    uint16_t commanderPosition;
+    uint16_t mapId;
+    uint32_t unk4;
+    uint32_t unk5;
+    uint32_t maxXP;
+    uint32_t unk6;
+    PositionXYZ pos;
+    PositionXZ dir;
+    PositionXYZ pos2;
+    PositionXZ dir2;
+    uint32_t unk8;
+    PacketB PB;
+} CommanderBarrackInfo;
+#pragma pack(pop)
+
+/**
  * BC_NORMAL packets subtypes
  */
 typedef enum PacketTypeBarrackNormal {
@@ -55,6 +77,16 @@ typedef struct CommanderCreateInfo {
     uint32_t unk8;
 } CommanderCreateInfo;
 
+/**
+ * BC_BARRACKNAME_CHANGE result types
+ */
+typedef enum BarrackNameResultType {
+
+    BC_BARRACKNAME_CHANGE_ALREADYEXIST = -1,
+    BC_BARRACKNAME_CHANGE_OK = 0,
+    BC_BARRACKNAME_CHANGE_ERROR = 1,
+
+} BarrackNameResultType;
 
 /**
  * @brief Send back the information of the account after a successful log in
@@ -105,7 +137,7 @@ void barrackBuilderServerEntry(
 /**
  * @brief Build the list of commanders in the barrack
  */
-void barrackBuilderCommanderList(uint64_t accountId, zmsg_t *replyMsg);
+void barrackBuilderCommanderList(CommanderBarrackInfo * commanders, zmsg_t *replyMsg);
 
 /**
  * @brief Build the list of zone servers
@@ -116,7 +148,7 @@ void barrackBuilderZoneTraffics(uint16_t mapId, zmsg_t *replyMsg);
  * @brief Change the name of the barrack
  */
 void
-barrackBuilderBarrackNameChange(uint8_t *barrackName, zmsg_t *replyMsg);
+barrackBuilderBarrackNameChange(BarrackNameResultType resultType, uint8_t *barrackName, zmsg_t *replyMsg);
 
 /**
  * @brief Destroy commanders

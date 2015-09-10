@@ -16,6 +16,7 @@
 #include "redis_session.h"
 #include "redis_socket_session.h"
 #include "redis_game_session.h"
+#include "redis_account_session.h"
 
 
 // ------ Structure declaration -------
@@ -30,6 +31,8 @@ bool redisGetSession (Redis *self, RedisSessionKey *key, Session *session) {
 
     GameSession *gameSession = &session->game;
     SocketSession *socketSession = &session->socket;
+    AccountSession *accountSession = &gameSession->accountSession;
+
     RedisSocketSessionKey *socketKey = &key->socketKey;
 
     // Search for the Socket Session
@@ -46,6 +49,16 @@ bool redisGetSession (Redis *self, RedisSessionKey *key, Session *session) {
         gameSessionInit (gameSession, &commanderInfo);
         dbg("Welcome, SOCKET_%s ! A new session has been initialized for you.", socketKey->sessionKey);
     } else {
+        // Get account session
+        RedisAccountSessionKey accountKey = {
+            .accountId = socketSession->accountId
+        };
+
+        if (!redisGetAccountSession(self, &accountKey, accountSession)) {
+            error("Cannot get Account Session.");
+            return false;
+        }
+
         // The client already exist in the game, get Game Session
         RedisGameSessionKey gameKey = {
             .routerId  = socketSession->routerId,
@@ -83,6 +96,17 @@ bool redisUpdateSession (Redis *self, Session *session) {
         return false;
     }
 
+    if (session->socket.accountId > 0) {
+        RedisAccountSessionKey accountKey = {
+            .accountId = session->socket.accountId
+        };
+
+        if (!(redisUpdateAccountSession(self, &accountKey, &session->game.accountSession))) {
+            error("Cannot update the account session");
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -94,6 +118,15 @@ bool redisFlushSession (Redis *self, RedisSessionKey *key) {
 
     if (!(redisGetSocketSession(self, socketKey, &socketSession))) {
         error("Cannot get the SocketSession for %s.", socketKey->sessionKey);
+        return false;
+    }
+
+    // Flush Account Session
+    RedisAccountSessionKey accountKey = {
+        .accountId = socketSession.accountId
+    };
+    if (!(redisFlushAccountSession (self, &accountKey))) {
+        error("Cannot flush the Account Session associated with the Socket Session.");
         return false;
     }
 
@@ -113,6 +146,7 @@ bool redisFlushSession (Redis *self, RedisSessionKey *key) {
         error("Cannot flush the Game Session associated with the Socket Session.");
         return false;
     }
+
 
     return true;
 }
