@@ -277,7 +277,7 @@ void barrackBuilderServerEntry(
     }
 }
 
-void barrackBuilderCommanderList(CommanderBarrackInfo * commanders ,zmsg_t *replyMsg) {
+void barrackBuilderCommanderList(GameSession * gameSession, CommanderBarrackInfo * commanders ,zmsg_t *replyMsg) {
 
     // Initialize commandersCount
     int commandersCount = 0;
@@ -298,17 +298,15 @@ void barrackBuilderCommanderList(CommanderBarrackInfo * commanders ,zmsg_t *repl
     #pragma pack(pop)
 
 
-
+    */
     /// FOR EACH ACCOUNT INFO (yet hard to know which they are)
     // Account Info struct
     #pragma pack(push, 1)
-    struct {
+    struct AccountInfo {
         uint16_t accountInfoType;
         uint8_t *AccountInfoContent;
     } AccountInfo;
     #pragma pack(pop)
-
-    */
 
     int accountInfoCount = 3;
 
@@ -319,9 +317,9 @@ void barrackBuilderCommanderList(CommanderBarrackInfo * commanders ,zmsg_t *repl
         uint8_t unk1;
         uint8_t commandersCount;
         uint8_t familyName [COMMANDER_FAMILY_NAME_SIZE];
-        uint16_t AccInfoLength; // sizeof(accountInfo)
-        //AccountInfo accountInfo[3];
-        CommanderBarrackInfo commanders[accountInfoCount];
+        uint16_t accountInfoLength; // sizeof(accountInfo)
+        //AccountInfo accountInfo[accountInfoCount];
+        CommanderBarrackInfo commanders[commandersCount];
     } replyPacket;
     #pragma pack(pop)
 
@@ -340,18 +338,20 @@ void barrackBuilderCommanderList(CommanderBarrackInfo * commanders ,zmsg_t *repl
         /*----------------------
          Test Code
         ------------------------*/
-        /*
-        // Family name
-        strncpy(replyPacket.familyName, accountData.familyName);
-        // Account Info
-        replyPacket.AccInfoLength = sizeof(replyPacket.accountInfo) / sizeof(uint8_t); // Is this right? (total bytes / 8)
 
+        // Family name
+        strncpy(replyPacket.familyName, gameSession->accountSession.familyName, sizeof(replyPacket.familyName));
+        // Account Info
+        //replyPacket.accountInfoLength = sizeof(replyPacket.accountInfo) / sizeof(uint8_t); // Is this right? (total bytes / 8)
+        /*
         replyPacket.accountInfo[0].accountInfoType = SWAP_UINT16(0x940e); // 94 0E = Medal (iCoin)
-        replyPacket.accountInfo[0].AccountInfoContent = accountData.credits;
+        replyPacket.accountInfo[0].AccountInfoContent = gameSession->accountSession.credits;
         replyPacket.accountInfo[1].accountInfoType = SWAP_UINT16(0x970e); // 97 0E = GiftMedal
         replyPacket.accountInfo[2].AccountInfoContent = 0;
         replyPacket.accountInfo[2].accountInfoType = SWAP_UINT16(0x950e); // 95 0E = ReceiveGiftMedal
         replyPacket.accountInfo[2].AccountInfoContent = 0;
+        */
+        /*
         // Commanders list
         for (int commanderIndex = 0; commanderIndex < replyPacket.commandersCount; commanderIndex++) {
             CommanderBarrackInfo *currentCommanderBarrackInfo = &replyPacket.commanders[commanderIndex];
@@ -694,7 +694,7 @@ void barrackBuilderBarrackNameChange(BarrackNameResultType resultType, uint8_t *
     BUILD_REPLY_PACKET(replyPacket, replyMsg)
     {
         serverPacketHeaderInit(&replyPacket.header, packetType);
-        replyPacket.changed = (resultType == BC_BARRACKNAME_CHANGE_OK) ? 1 : 0;
+        replyPacket.changed = (resultType == BC_BARRACKNAME_CHANGE_OK);
         replyPacket.resultType = resultType;
         strncpy(replyPacket.barrackName, barrackName, sizeof(replyPacket.barrackName));
     }

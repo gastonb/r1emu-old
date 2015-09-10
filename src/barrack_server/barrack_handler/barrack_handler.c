@@ -101,8 +101,9 @@ static PacketHandlerState barrackHandlerLogin(
         session->game.accountSession.privilege);
 
     mySqlGetAccountData(self->sqlConn, clientPacket->login, clientPacket->md5Password, accountSession);
-    // TODO
-    if (accountSession->accountId == 0) { // If user/pass incorrect
+
+    // Check if user/pass incorrect
+    if (accountSession->accountId == 0) {
         barrackBuilderMessage(BC_MESSAGE_USER_PASS_INCORRECT_1, "", reply);
         return PACKET_HANDLER_OK;
     } else {
@@ -347,6 +348,7 @@ barrackHandlerStartBarrack(
 
     // Send the commander list
     barrackBuilderCommanderList(
+        &session->game,
         commanders,
         reply
     );
@@ -415,8 +417,12 @@ static PacketHandlerState barrackHandlerBarrackNameChange(
             dbg("Wrong barrack name character in BC_BARRACKNAME_CHANGE");
             ResultType = BC_BARRACKNAME_CHANGE_ERROR;
          }
-
     }
+
+    dbg("AccountId: %11x", session->game.accountSession.accountId);
+
+    // Try to perform the change
+    ResultType = mySqlSetFamilyName(self->sqlConn, &session->game.accountSession, clientPacket->barrackName);
 
     if (ResultType == BC_BARRACKNAME_CHANGE_OK) {
         // Update the session
@@ -428,7 +434,12 @@ static PacketHandlerState barrackHandlerBarrackNameChange(
     // Build the reply packet
     barrackBuilderBarrackNameChange(ResultType, commander->familyName, reply);
 
-    return PACKET_HANDLER_UPDATE_SESSION;
+    // Update session only if barrack name changed.
+    if (ResultType == BC_BARRACKNAME_CHANGE_OK) {
+        return PACKET_HANDLER_UPDATE_SESSION;
+    } else {
+        return PACKET_HANDLER_OK;
+    }
 }
 
 static PacketHandlerState barrackHandlerCommanderDestroy(

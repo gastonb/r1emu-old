@@ -137,7 +137,7 @@ void barrackBuilderServerEntry(
 /**
  * @brief Build the list of commanders in the barrack
  */
-void barrackBuilderCommanderList(CommanderBarrackInfo * commanders, zmsg_t *replyMsg);
+void barrackBuilderCommanderList(GameSession * gameSession, CommanderBarrackInfo * commanders, zmsg_t *replyMsg);
 
 /**
  * @brief Build the list of zone servers
