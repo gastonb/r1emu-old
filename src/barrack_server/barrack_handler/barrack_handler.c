@@ -22,6 +22,7 @@
 #include "common/redis/fields/redis_socket_session.h"
 #include "common/redis/fields/redis_account_session.h"
 #include "common/mysql/fields/mysql_account_data.h"
+#include "common/mysql/fields/mysql_commander.h"
 
 /** Read the passport and accepts or refuse the authentification */
 static PacketHandlerState barrackHandlerLoginByPassport  (Worker *self, Session *session, uint8_t *packet, size_t packetSize, zmsg_t *reply);
@@ -321,12 +322,12 @@ barrackHandlerStartBarrack(
 */
 
     // ??
-
+/*
     barrackBuilderNormalUnk1(
         session->socket.accountId,
         reply
     );
-
+*/
 
     // Connect to S Server at localhost:1337 and localhost:1338
     barrackBuilderServerEntry(
@@ -342,13 +343,23 @@ barrackHandlerStartBarrack(
 
     CommanderBarrackInfo * commanders;
 
-    /*
-    CommanderBarrackInfo[] commanders = getCommandersByAccountId(session->socket.accountId);
-    */
+    dbg("accountId: %11x", session->socket.accountId);
+
+    int commandersCount = mySqlGetCommandersByAccountId(self->sqlConn, session->socket.accountId, &commanders);
+
+    if (commandersCount == -1) {
+        // Error
+        /// TODO
+        return PACKET_HANDLER_ERROR;
+    }
+
+
 
     // Send the commander list
     barrackBuilderCommanderList(
+        session->socket.accountId,
         &session->game,
+        commandersCount,
         commanders,
         reply
     );
@@ -374,12 +385,12 @@ static PacketHandlerState barrackHandlerCurrentBarrack(
 
     barrackBuilderPetInformation(reply);
     barrackBuilderZoneTraffics(1002, reply);
-
+/*
     barrackBuilderNormalUnk1(
         session->socket.accountId,
         reply
     );
-
+*/
     return PACKET_HANDLER_OK;
 }
 
@@ -483,29 +494,52 @@ static PacketHandlerState barrackHandlerCommanderCreate(
         uint8_t commanderName[COMMANDER_NAME_SIZE+1];
         uint16_t jobId;
         uint8_t gender;
-        float unk4;
-        float unk5;
-        float unk6;
+        float positionX;
+        float positionY;
+        float positionZ;
         uint8_t hairId;
     }  *clientPacket = (void *) packet;
     #pragma pack(pop)
+
+    error("ReceivedCharacterPosition: %x", clientPacket->charPosition);
 
     CHECK_CLIENT_PACKET_SIZE(*clientPacket, packetSize, CB_COMMANDER_CREATE);
 
     CommanderInfo *commanderInfo = &session->game.commanderSession.currentCommander;
     CommanderPkt *commander = &commanderInfo->base;
 
-    // CharName
-    strncpy(commander->commanderName, clientPacket->commanderName, sizeof(commander->commanderName));
+    // Validate all parameters
 
-    // AccountID
-    commander->accountId = session->socket.accountId;
+    // Name
+    size_t commanderNameLen = strlen(clientPacket->commanderName);
+
+    if (commanderNameLen == 0) {
+
+        error("Empty commander name");
+
+        barrackBuilderMessage(BC_MESSAGE_COMMANDER_NAME_TOO_SHORT, "", reply);
+        return PACKET_HANDLER_OK;
+    }
+
+    for (size_t i = 0; i < commanderNameLen; i++) {
+         if (!isprint(clientPacket->commanderName[i])) {
+
+            dbg("Wrong commander name character in Commander");
+
+            barrackBuilderMessage(BC_MESSAGE_NAME_ALREADY_EXIST, "", reply);
+            return PACKET_HANDLER_OK;
+         }
+    }
+
+    // Check valid hairId
+    /// TODO
 
     // JobID
     switch(clientPacket->jobId) {
         default:
             error("Invalid commander Job ID(%x)", clientPacket->jobId);
-            return PACKET_HANDLER_ERROR;
+            barrackBuilderMessage(BC_MESSAGE_CREATE_COMMANDER_FAIL, "", reply);
+            return PACKET_HANDLER_OK;
             break;
         case COMMANDER_JOB_WARRIOR:
             commander->classId = COMMANDER_CLASS_WARRIOR;
@@ -533,14 +567,23 @@ static PacketHandlerState barrackHandlerCommanderCreate(
         case COMMANDER_GENDER_BOTH:
         default:
             error("Invalid gender(%d)", clientPacket->gender);
-            return PACKET_HANDLER_ERROR;
+            barrackBuilderMessage(BC_MESSAGE_CREATE_COMMANDER_FAIL, "", reply);
+            return PACKET_HANDLER_OK;
             break;
     }
+
+
 
     // Character position
     if (clientPacket->charPosition != session->game.barrackSession.charactersCreatedCount + 1) {
         warning("Client sent a malformed charPosition.");
     }
+
+    // CharName
+    strncpy(commander->commanderName, clientPacket->commanderName, sizeof(commander->commanderName));
+
+    // AccountID
+    commander->accountId = session->socket.accountId;
 
     // Hair type
     commander->hairId = clientPacket->hairId;
@@ -561,7 +604,7 @@ static PacketHandlerState barrackHandlerCommanderCreate(
     commanderInfo->pos = PositionXYZ_decl(19.0, 28.0, 29.0);
 
     // Default MapId : West Siauliai Woods
-    session->game.commanderSession.mapId = 1001;
+    session->game.commanderSession.mapId = 1002;
 
     // Add the character to the account
     session->game.barrackSession.charactersCreatedCount++;
@@ -582,7 +625,15 @@ static PacketHandlerState barrackHandlerCommanderCreate(
         .pos2 = commanderInfo->pos,
         .dir2 = commanderDir,
     };
-    barrackBuilderCommanderCreate(&commanderCreate, reply);
+
+    if (mySqlCommanderCreate(self->sqlConn, session->socket.accountId, &commanderCreate)) {
+        barrackBuilderCommanderCreate(&commanderCreate, reply);
+    } else {
+        // Error creating commander
+        return PACKET_HANDLER_ERROR;
+    }
+
+
 
     return PACKET_HANDLER_UPDATE_SESSION;
 }
@@ -612,23 +663,4 @@ static PacketHandlerState barrackHandlerLogout(
     );
 
     return PACKET_HANDLER_UPDATE_SESSION;
-}
-
-CommanderBarrackInfo * getCommandersByAccountId(uint64_t accountId) {
-
-    // Commanders for this Account
-    CommanderBarrackInfo *commanders;
-
-    // Check if accountId is an integer greater than zero
-    if (accountId <= 0) {
-        // Error
-        return commanders;
-    }
-
-    // Get commanders from REDIS
-    /// TODO
-    // If not cached, get commanders from MySQL
-    /// TODO
-
-    return commanders;
 }

@@ -173,3 +173,6 @@ void commanderInfoPrint(CommanderInfo *commander);
  * @brief Initialize a Commander
  */
 void commanderInit(CommanderPkt *commander);
+
+void commanderPrint(CommanderPkt *commander);
+void commanderEquipmentPrint(CommanderEquipment *equipment);

@@ -277,15 +277,16 @@ void barrackBuilderServerEntry(
     }
 }
 
-void barrackBuilderCommanderList(GameSession * gameSession, CommanderBarrackInfo * commanders ,zmsg_t *replyMsg) {
+void barrackBuilderCommanderList(uint64_t accountId, GameSession * gameSession, int commandersCount, CommanderBarrackInfo * commanders ,zmsg_t *replyMsg) {
 
-    // Initialize commandersCount
-    int commandersCount = 0;
-
-    // Get Commanders Count
-    if (sizeof(commanders) > 0) {
-        int commandersCount = sizeof(commanders)/sizeof(commanders[0]);;
+    /*
+    if (commandersCount > 0) {
+            for (int i = 0; i < commandersCount; i++) {
+                commanderPrint(&commanders[i].commander);
+                commanderEquipmentPrint(&commanders[i].commander.equipment);
+            }
     }
+    */
 
 /*
     /// FOR EACH ITEM PROPERTY
@@ -301,14 +302,16 @@ void barrackBuilderCommanderList(GameSession * gameSession, CommanderBarrackInfo
     */
     /// FOR EACH ACCOUNT INFO (yet hard to know which they are)
     // Account Info struct
+    /*
     #pragma pack(push, 1)
     struct AccountInfo {
         uint16_t accountInfoType;
         uint8_t *AccountInfoContent;
     } AccountInfo;
     #pragma pack(pop)
+    */
 
-    int accountInfoCount = 3;
+    //int accountInfoCount = 3;
 
     #pragma pack(push, 1)
     struct {
@@ -319,6 +322,13 @@ void barrackBuilderCommanderList(GameSession * gameSession, CommanderBarrackInfo
         uint8_t familyName [COMMANDER_FAMILY_NAME_SIZE];
         uint16_t accountInfoLength; // sizeof(accountInfo)
         //AccountInfo accountInfo[accountInfoCount];
+
+        uint16_t typeCredits;
+        float creditsAmount;
+        uint16_t typeCredits2;
+        float creditsAmount2;
+        uint16_t typeCredits3;
+        float creditsAmount3;
         CommanderBarrackInfo commanders[commandersCount];
     } replyPacket;
     #pragma pack(pop)
@@ -331,8 +341,8 @@ void barrackBuilderCommanderList(GameSession * gameSession, CommanderBarrackInfo
     {
 
         variableSizePacketHeaderInit(&replyPacket.variableSizeHeader, packetType, sizeof(replyPacket));
-        //replyPacket.accountId = accountData.accountId;
-        replyPacket.unk1 = 3; // ICBT - equal to 1 or 4
+        replyPacket.accountId = accountId;
+        replyPacket.unk1 = 1; // ICBT - equal to 1 or 4
         replyPacket.commandersCount = commandersCount;
 
         /*----------------------
@@ -341,9 +351,9 @@ void barrackBuilderCommanderList(GameSession * gameSession, CommanderBarrackInfo
 
         // Family name
         strncpy(replyPacket.familyName, gameSession->accountSession.familyName, sizeof(replyPacket.familyName));
+        /*
         // Account Info
         //replyPacket.accountInfoLength = sizeof(replyPacket.accountInfo) / sizeof(uint8_t); // Is this right? (total bytes / 8)
-        /*
         replyPacket.accountInfo[0].accountInfoType = SWAP_UINT16(0x940e); // 94 0E = Medal (iCoin)
         replyPacket.accountInfo[0].AccountInfoContent = gameSession->accountSession.credits;
         replyPacket.accountInfo[1].accountInfoType = SWAP_UINT16(0x970e); // 97 0E = GiftMedal
@@ -351,71 +361,86 @@ void barrackBuilderCommanderList(GameSession * gameSession, CommanderBarrackInfo
         replyPacket.accountInfo[2].accountInfoType = SWAP_UINT16(0x950e); // 95 0E = ReceiveGiftMedal
         replyPacket.accountInfo[2].AccountInfoContent = 0;
         */
-        /*
+        replyPacket.accountInfoLength = 0x12; // 3 sets
+        replyPacket.typeCredits = SWAP_UINT16(0x940e); // 94 0E = Medal (iCoin)
+        replyPacket.creditsAmount = gameSession->accountSession.credits;
+        replyPacket.typeCredits2 = SWAP_UINT16(0x970e); // 94 0E = Medal (iCoin)
+        replyPacket.creditsAmount2 = 0;
+        replyPacket.typeCredits3 = SWAP_UINT16(0x950e); // 94 0E = Medal (iCoin)
+        replyPacket.creditsAmount3 = 0;
+
         // Commanders list
         for (int commanderIndex = 0; commanderIndex < replyPacket.commandersCount; commanderIndex++) {
+
             CommanderBarrackInfo *currentCommanderBarrackInfo = &replyPacket.commanders[commanderIndex];
             CommanderPkt *currentCommander = &currentCommanderBarrackInfo->commander;
-            commanderInit(currentCommander);
 
             CommanderBarrackInfo commanderData = commanders[commanderIndex];
+
+            commanderPrint(&commanderData.commander);
+            commanderEquipmentPrint(&commanderData.commander.equipment);
+
             // Set some info
             if (commanderIndex >= 0) {
-                strncpy(currentCommander->commanderName, commanderData.CommanderName, sizeof(currentCommander->commanderName));
+                strncpy(currentCommander->commanderName, commanderData.commander.commanderName, sizeof(currentCommander->commanderName));
 
                 currentCommander->accountId = 0x0; // Not needed
-                currentCommander->classId = commanderData.classId;
+                currentCommander->classId = commanderData.commander.classId;
                 currentCommander->unk4 = 0x0;
-                currentCommander->jobId = commanderData.jobId;
-                currentCommander->level = 1;
-                currentCommander->gender = commanderData.gender;
-                currentCommander->hairId = 0x2E;
+                currentCommander->jobId = commanderData.commander.jobId;
+                currentCommander->level = commanderData.commander.level;
+                currentCommander->gender = commanderData.commander.gender;
+                currentCommander->hairId = commanderData.commander.hairId;
 
-                currentCommander->equipment.head_top = commanderData.head_top;
-                currentCommander->equipment.head_middle = commanderData.head_middle;
-                currentCommander->equipment.itemUnk1 = commanderData.itemUnk1;
-                currentCommander->equipment.body_armor = commanderData.body_armor;
-                currentCommander->equipment.gloves = commanderData.gloves;
-                currentCommander->equipment.boots = commanderData.boots;
-                currentCommander->equipment.itemUnk2 = commanderData.itemUnk2;
-                currentCommander->equipment.bracelet = commanderData.bracelet;
-                currentCommander->equipment.weapon = commanderData.weapon;
-                currentCommander->equipment.shield = commanderData.shield;
-                currentCommander->equipment.costume = commanderData.costume;
-                currentCommander->equipment.itemUnk3 = commanderData.itemUnk3;
-                currentCommander->equipment.itemUnk4 = commanderData.itemUnk4;
-                currentCommander->equipment.itemUnk5 = commanderData.itemUnk5;
-                currentCommander->equipment.leg_armor = commanderData.leg_armor;
-                currentCommander->equipment.itemUnk6 = commanderData.itemUnk6;
-                currentCommander->equipment.itemUnk7 = commanderData.itemUnk7;
-                currentCommander->equipment.ring_left = commanderData.ring_left;
-                currentCommander->equipment.ring_right = commanderData.ring_right;
-                currentCommander->equipment.necklace = commanderData.necklace;
+                CommanderEquipment *cEquipment = &currentCommander->equipment;
+                CommanderEquipment *dataEquipment = &commanderData.commander.equipment;
+
+                cEquipment->head_top = dataEquipment->head_top;
+                cEquipment->head_middle = dataEquipment->head_middle;
+                cEquipment->itemUnk1 = dataEquipment->itemUnk1;
+                cEquipment->body_armor = dataEquipment->body_armor;
+                cEquipment->gloves = dataEquipment->gloves;
+                cEquipment->boots = dataEquipment->boots;
+                cEquipment->itemUnk2 = dataEquipment->itemUnk2;
+                cEquipment->bracelet = dataEquipment->bracelet;
+                cEquipment->weapon = dataEquipment->weapon;
+                cEquipment->shield = dataEquipment->shield;
+                cEquipment->costume = dataEquipment->costume;
+                cEquipment->itemUnk3 = dataEquipment->itemUnk3;
+                cEquipment->itemUnk4 = dataEquipment->itemUnk4;
+                cEquipment->itemUnk5 = dataEquipment->itemUnk5;
+                cEquipment->leg_armor = dataEquipment->leg_armor;
+                cEquipment->itemUnk6 = dataEquipment->itemUnk6;
+                cEquipment->itemUnk7 = dataEquipment->itemUnk7;
+                cEquipment->ring_left = dataEquipment->ring_left;
+                cEquipment->ring_right = dataEquipment->ring_right;
+                cEquipment->necklace = dataEquipment->necklace;
 
 
-                currentCommanderBarrackInfo->socialInfoId = SWAP_UINT64(0xf41100007d000000); // CharUniqueId?
+                currentCommanderBarrackInfo->socialInfoId = commanderData.socialInfoId; // CharUniqueId?
                 currentCommanderBarrackInfo->commanderPosition = commanderIndex+1;
                 currentCommanderBarrackInfo->mapId = commanderData.mapId; //
-                currentCommanderBarrackInfo->unk4 = 0; //
+                currentCommanderBarrackInfo->unk4 = SWAP_UINT32(0x02000000); //
                 currentCommanderBarrackInfo->unk5 = 0;
-                currentCommanderBarrackInfo->maxXP = commanderData.experience; // ?? Or current XP?
-                currentCommanderBarrackInfo->unk6 = 0; //
+                currentCommanderBarrackInfo->maxXP = commanderData.maxXP; // ?? Or current XP?
+                currentCommanderBarrackInfo->unk6 = SWAP_UINT32(0xC01C761C); //
 
-                currentCommanderBarrackInfo->pos.x = commanderData.positionX;
-                currentCommanderBarrackInfo->pos.y = commanderData.positionY;
-                currentCommanderBarrackInfo->pos.z = commanderData.positionZ;
+                currentCommanderBarrackInfo->pos.x = SWAP_UINT32(0x25e852c1);
+                currentCommanderBarrackInfo->pos.y = SWAP_UINT32(0x6519e541);
+                currentCommanderBarrackInfo->pos.z = SWAP_UINT32(0x39f4ef42);
 
                 currentCommanderBarrackInfo->dir.x = 0; // Set direction to face camera.
                 currentCommanderBarrackInfo->dir.z = 0; // Set direction to face camera.
 
-                currentCommanderBarrackInfo->pos2.x = commanderData.positionX;
-                currentCommanderBarrackInfo->pos2.y = commanderData.positionY;
-                currentCommanderBarrackInfo->pos2.z = commanderData.positionZ;
+                currentCommanderBarrackInfo->pos2.x = SWAP_UINT32(0x25e852c1);
+                currentCommanderBarrackInfo->pos2.y = SWAP_UINT32(0x6519e541);
+                currentCommanderBarrackInfo->pos2.z = SWAP_UINT32(0x39f4ef42);
                 currentCommanderBarrackInfo->dir2.x = 0;
                 currentCommanderBarrackInfo->dir2.z = 0;
                 currentCommanderBarrackInfo->unk8 = 0; //
 
                 // Iterate through Items
+                /*
                 foreach (Commander. as Item) {
                     /// FOR EACH ITEM
                     // Item Properties struct
@@ -433,6 +458,7 @@ void barrackBuilderCommanderList(GameSession * gameSession, CommanderBarrackInfo
 
                     }
                 }
+                */
 
 
                 currentCommanderBarrackInfo->PB.i_1 = 0;
@@ -461,8 +487,6 @@ void barrackBuilderCommanderList(GameSession * gameSession, CommanderBarrackInfo
 
         }
 
-
-        */
 
         /*----------------------------
          End test code

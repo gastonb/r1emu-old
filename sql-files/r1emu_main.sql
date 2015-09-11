@@ -2,6 +2,47 @@
 -- Database: `r1emu`
 --
 
+DELIMITER $$
+--
+-- Procedimientos
+--
+CREATE DEFINER=`root`@`localhost` PROCEDURE `bSetFamilyName`(IN `accountId` INT, IN `newName` VARCHAR(64))
+    MODIFIES SQL DATA
+    COMMENT 'set Family Name'
+BEGIN
+	DECLARE current_name varchar(64);
+
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
+    BEGIN
+          SET @flag = 1;
+          ROLLBACK;
+    END;
+
+    START TRANSACTION;
+
+    	SELECT family_name INTO current_name 
+        FROM accounts
+        WHERE family_name = newName
+        LIMIT 1;
+        
+        IF current_name <> "" THEN
+        	SET @flag = -1;
+            ROLLBACK;
+        ELSE
+        	UPDATE accounts
+            SET family_name = newName
+            WHERE account_id = accountId;
+        	SET @flag = 0;
+        END IF;
+
+
+    COMMIT;
+
+
+END$$
+
+DELIMITER ;
+
 -- --------------------------------------------------------
 
 --
@@ -31,7 +72,7 @@ CREATE TABLE IF NOT EXISTS `accounts` (
 
 CREATE TABLE IF NOT EXISTS `commanders` (
   `commander_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  ` commander_name` varchar(64) NOT NULL,
+  `commander_name` varchar(64) NOT NULL,
   `account_id` int(10) unsigned NOT NULL,
   `last_login` datetime NOT NULL,
   `last_logout` datetime NOT NULL,
