@@ -81,6 +81,8 @@ int mySqlGetCommandersByAccountId(MySQL *self, uint64_t accountId, CommanderInfo
 
                 CommanderInfo *thisCommander = &(*commanders)[i];
 
+                thisCommander->pcId = strtoll(row[MYSQL_COMMANDER_FIELD_commander_id], NULL, 10);
+                thisCommander->commanderId = strtoll(row[MYSQL_COMMANDER_FIELD_commander_id], NULL, 10);
                 thisCommander->socialInfoId = strtoll(row[MYSQL_COMMANDER_FIELD_commander_id], NULL, 10);
                 //thisCommander->mapId = strtol(row[MYSQL_COMMANDER_FIELD_map_id], NULL, 10);
                 strncpy(thisCommander->base.commanderName, row[MYSQL_COMMANDER_FIELD_commanderName], sizeof(thisCommander->base.commanderName));

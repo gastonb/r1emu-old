@@ -86,12 +86,12 @@ typedef struct Item
     uint32_t itemType; // ID of this item indicating which item is it.
     uint32_t amount; // amount of this item
     ItemAttributes *attributes;
-    int useGender;
-    int useJob;
+    uint8_t useGender;
+    uint8_t useJob;
     bool isTwoHanded;
-    int equipSlot;
+    uint8_t equipSlot;
     bool isDummy; // When an item is created for dummy porpuses.
-
+    uint32_t inventoryIndex;
 } Item;
 
 

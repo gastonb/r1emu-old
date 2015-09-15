@@ -60,7 +60,7 @@ void itemDestroy(Item **_self) {
     }
 }
 
-bool itemCreateEmptyItem(Item *self) {
+bool itemCreateEmptyItemitemCreateEmptyItem(Item *self) {
     ItemAttributes *attributes;
     if ((attributes = malloc(sizeof(ItemAttributes))) == NULL) {
         return false;
