@@ -18,6 +18,7 @@
 
 #include "R1EMU.h"
 #include "common/commander/commander.h"
+#include "common/commander/inventory.h"
 
 /**
  * @brief
@@ -28,6 +29,7 @@ struct CommanderSession {
 
     // current commander
     CommanderInfo currentCommander;
+    Inventory inventory;
 };
 
 typedef struct CommanderSession CommanderSession;

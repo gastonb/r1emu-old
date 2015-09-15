@@ -14,7 +14,7 @@
 #include "mysql_commander.h"
 #include "common/commander/commander.h"
 
-int mySqlGetCommandersByAccountId(MySQL *self, uint64_t accountId, CommanderBarrackInfo **commanders) {
+int mySqlGetCommandersByAccountId(MySQL *self, uint64_t accountId, CommanderInfo **commanders) {
     MYSQL_ROW row;
 
     dbg("accountId: %11x", accountId);
@@ -77,20 +77,20 @@ int mySqlGetCommandersByAccountId(MySQL *self, uint64_t accountId, CommanderBarr
 
 
             int i = 0;
-            while (row = mysql_fetch_row(self->result)) {
+            while ((row = mysql_fetch_row(self->result))) {
 
-                CommanderBarrackInfo *thisCommander = &(*commanders)[i];
+                CommanderInfo *thisCommander = &(*commanders)[i];
 
                 thisCommander->socialInfoId = strtoll(row[MYSQL_COMMANDER_FIELD_commander_id], NULL, 10);
-                thisCommander->mapId = strtol(row[MYSQL_COMMANDER_FIELD_map_id], NULL, 10);
-                strncpy(thisCommander->commander.commanderName, row[MYSQL_COMMANDER_FIELD_commanderName], sizeof(thisCommander->commander.commanderName));
-                thisCommander->commander.jobId = strtol(row[MYSQL_COMMANDER_FIELD_job_id], NULL, 10);
-                thisCommander->commander.classId = strtol(row[MYSQL_COMMANDER_FIELD_class_id], NULL, 10);
-                thisCommander->commander.hairId = strtol(row[MYSQL_COMMANDER_FIELD_hair_id], NULL, 10);
-                thisCommander->commander.gender = strtol(row[MYSQL_COMMANDER_FIELD_gender], NULL, 10);
-                thisCommander->commander.level = strtol(row[MYSQL_COMMANDER_FIELD_level], NULL, 10);
+                //thisCommander->mapId = strtol(row[MYSQL_COMMANDER_FIELD_map_id], NULL, 10);
+                strncpy(thisCommander->base.commanderName, row[MYSQL_COMMANDER_FIELD_commanderName], sizeof(thisCommander->base.commanderName));
+                thisCommander->base.jobId = strtol(row[MYSQL_COMMANDER_FIELD_job_id], NULL, 10);
+                thisCommander->base.classId = strtol(row[MYSQL_COMMANDER_FIELD_class_id], NULL, 10);
+                thisCommander->base.hairId = strtol(row[MYSQL_COMMANDER_FIELD_hair_id], NULL, 10);
+                thisCommander->base.gender = strtol(row[MYSQL_COMMANDER_FIELD_gender], NULL, 10);
+                thisCommander->base.level = strtol(row[MYSQL_COMMANDER_FIELD_level], NULL, 10);
 
-                CommanderEquipment *equipment = &thisCommander->commander.equipment;
+                CommanderEquipment *equipment = &thisCommander->base.equipment;
 
                 equipment->head_top = strtol(row[MYSQL_COMMANDER_FIELD_eqslot_head_top], NULL, 10);
                 equipment->head_middle = strtol(row[MYSQL_COMMANDER_FIELD_eqslot_head_middle], NULL, 10);
@@ -98,7 +98,7 @@ int mySqlGetCommandersByAccountId(MySQL *self, uint64_t accountId, CommanderBarr
                 equipment->body_armor = strtol(row[MYSQL_COMMANDER_FIELD_eqslot_body_armor], NULL, 10);
                 equipment->gloves = strtol(row[MYSQL_COMMANDER_FIELD_eqslot_gloves], NULL, 10);
                 equipment->boots = strtol(row[MYSQL_COMMANDER_FIELD_eqslot_boots], NULL, 10);
-                equipment->itemUnk2 = strtol(row[MYSQL_COMMANDER_FIELD_eqslot_unkown_2], NULL, 10);
+                equipment->helmet = strtol(row[MYSQL_COMMANDER_FIELD_eqslot_unkown_2], NULL, 10);
                 equipment->bracelet = strtol(row[MYSQL_COMMANDER_FIELD_eqslot_bracelet], NULL, 10);
                 equipment->weapon = strtol(row[MYSQL_COMMANDER_FIELD_eqslot_weapon], NULL, 10);
                 equipment->shield = strtol(row[MYSQL_COMMANDER_FIELD_eqslot_shield], NULL, 10);
@@ -113,8 +113,9 @@ int mySqlGetCommandersByAccountId(MySQL *self, uint64_t accountId, CommanderBarr
                 equipment->ring_right = strtol(row[MYSQL_COMMANDER_FIELD_eqslot_ring_right], NULL, 10);
                 equipment->necklace = strtol(row[MYSQL_COMMANDER_FIELD_eqslot_necklace], NULL, 10);
 
-                commanderPrint(&thisCommander->commander);
-                commanderEquipmentPrint(equipment);
+                /// debug info
+                //commanderPrint(&thisCommander->base);
+                //commanderEquipmentPrint(equipment);
                 i++;
             }
         }
@@ -123,7 +124,7 @@ int mySqlGetCommandersByAccountId(MySQL *self, uint64_t accountId, CommanderBarr
 }
 
 bool mySqlCommanderCreate(MySQL *self, uint64_t accountId, CommanderCreateInfo *commanderCreate) {
-    MYSQL_ROW row;
+    //MYSQL_ROW row;
 
     CommanderPkt *commander = &commanderCreate->commander;
 
@@ -184,7 +185,7 @@ bool mySqlCommanderCreate(MySQL *self, uint64_t accountId, CommanderCreateInfo *
                    commander->equipment.body_armor,
                    commander->equipment.gloves,
                    commander->equipment.boots,
-                   commander->equipment.itemUnk2,
+                   commander->equipment.helmet,
                    commander->equipment.bracelet,
                    commander->equipment.weapon,
                    commander->equipment.shield,

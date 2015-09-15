@@ -94,6 +94,6 @@ enum MySqlCommanderFields {
 	MYSQL_COMMANDER_FIELD_COUNT
 } MySqlCommanderFields;
 
-int mySqlGetCommandersByAccountId(MySQL *self, uint64_t accountId, CommanderBarrackInfo **commanders);
+int mySqlGetCommandersByAccountId(MySQL *self, uint64_t accountId, CommanderInfo **commanders);
 
 bool mySqlCommanderCreate(MySQL *self, uint64_t accountId, CommanderCreateInfo *commanderCreate);

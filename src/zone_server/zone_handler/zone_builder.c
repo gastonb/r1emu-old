@@ -1014,53 +1014,28 @@ void zoneBuilderSkillList(uint32_t targetPcId, zmsg_t *replyMsg) {
 void zoneBuilderItemEquipList(zmsg_t *replyMsg) {
     #pragma pack(push, 1)
     struct {
-        // not yet implemented
+        VariableSizePacketHeader variableSizeHeader;
+        // ItemEquipment equipment[20];
     } replyPacket;
-   (void) replyPacket;
     #pragma pack(pop)
 
-    // BUILD_REPLY_PACKET(replyPacket, replyMsg)
-    {
-        size_t memSize;
-        void *memory = dumpToMem(
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  2D 0C FF FF FF FF 12 02 02 00 00 00 00 00 00 00 | -...............\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  00 00 00 00 00 00 00 00 00 00 01 00 00 02 00 00 | ................\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  02 00 00 00 00 00 00 04 00 00 00 00 00 00 00 00 | ................\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  01 0A 00 00 00 00 0E 00 04 00 00 00 00 00 00 00 | ................\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  00 00 00 00 00 00 00 00 02 00 27 00 00 00 00 28 | ..........'....(\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  9D 1A 08 00 0C 00 18 00 F0 25 00 00 3C 01 00 00 | .........%..<...\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  03 D9 18 00 12 00 00 00 D0 0E 00 00 00 40 03 0F | .............@..\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  00 00 00 00 06 00 00 00 00 00 18 00 00 00 00 00 | ................\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  00 00 00 00 04 D9 18 00 CE CC 73 00 07 00 00 00 | ..........s.....\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  00 00 00 00 00 00 00 00 00 00 00 00 05 5B 47 47 | .............[GG\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  C9 0B E3 DF 10 27 00 00 00 00 80 93 00 00 00 00 | .....'..........\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  00 00 00 00 06 F9 18 00 EB 96 9B 00 F8 2A 00 00 | .............*..\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  00 00 18 00 00 00 00 00 00 00 00 00 07 88 80 93 | ................\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  00 80 C9 3E 8D 11 03 00 12 00 71 00 F1 25 00 00 | ...>......q..%..\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  3C 01 00 00 08 D9 18 00 31 00 00 00 D4 0E 00 00 | <.......1.......\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  A0 40 12 0F 00 00 80 40 03 0F 00 00 00 00 7C 96 | .@.....@......|.\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  98 00 00 00 92 F3 00 00 00 00 00 00 00 00 09 00 | ................\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  00 D0 0E 00 00 70 04 00 00 00 00 00 00 6E 00 00 | .....p.......n..\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  00 00 00 00 00 00 0A 00 F4 01 4C 19 F4 F1 09 00 | ..........L.....\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  00 00 00 00 5F 94 00 00 00 00 00 00 00 00 0B 42 | ...._..........B\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  12 A8 80 93 0C 03 09 00 00 00 00 00 24 02 00 00 | ............$...\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  00 00 00 00 00 00 0C 00 00 00 00 00 84 DA 04 00 | ................\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  00 00 00 00 78 6E 00 00 00 00 00 00 00 00 0D 00 | ....xn..........\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  D4 00 4C 19 F4 F1 8D F3 07 00 0C 00 5F 94 F2 25 | ..L........._..%\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  00 00 3C 01 00 00 0E 42 AA A8 80 93 EC 01 D0 0E | ..<....B........\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  00 00 00 40 03 0F 00 00 00 00 09 00 00 00 00 00 | ...@............\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  00 00 00 00 00 00 00 00 00 00 0F 00 78 6E 9C 00 | ............xn..\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  FF FF 09 00 00 00 00 00 B4 66 00 00 00 00 00 00 | .........f......\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  00 00 10 00 5F 94 7D 00 20 DB 09 00 00 00 00 00 | ...._.}. .......\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  62 A9 00 00 00 00 00 00 00 00 11 00 E4 66 4B 19 | b............fK.\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  00 00 09 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  00 00 12 00 78 6E 9C 00 FF FF 0A 00 00 00 00 00 | ....xn..........\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  94 65 00 00 00 00 00 00 00 00 13 00 5F 94 7D 00 | .e.........._.}.\n"
-            "[03:07:36][main.c:56 in CNetUsr__PacketHandler_1]  68 DB                                           | h.\n"
-          , NULL, &memSize
-        );
+    PacketType packetType = ZC_ITEM_EQUIP_LIST;
+    CHECK_SERVER_PACKET_SIZE(replyPacket, packetType);
 
-        zmsg_add(replyMsg, zframe_new(memory, memSize));
+    BUILD_REPLY_PACKET(replyPacket, replyMsg)
+    {
+        variableSizePacketHeaderInit(&replyPacket.variableSizeHeader, packetType, sizeof(replyPacket));
+        /*
+        foreach (equipmentItem as Equipment) {
+            uint32_t itemType;
+            uint16_t size(inbytes) of attributes;
+            uint16_t unkown;
+            uint64_t ItemId (Unique);
+            uint32_t index?
+            variablesize attributes;
+        }
+        */
+
     }
 }
 
@@ -1482,6 +1457,20 @@ void zoneBuilderItemInventoryList(zmsg_t *replyMsg) {
     #pragma pack(push, 1)
     struct {
         // not yet implemented
+        /*
+        int32_t countItemsInInventory;
+        int16_t compression
+        Array[countItemsInInventory] {
+            int32_t itemType;
+            int16_t sizeOfAttributes;
+            int16_t unk1;
+            int64_t ItemId (unique);
+            int32_t amount;
+            int32_t price;
+            int32_t indexInInventory?
+            variablesize attributes [sizeOfAttributes]
+        }
+        */
     } replyPacket;
 
    (void) replyPacket;
@@ -1648,3 +1637,47 @@ void zoneBuilderLogout(zmsg_t *replyMsg) {
         serverPacketHeaderInit(&replyPacket.header, packetType);
     }
 }
+
+void zoneBuilderUpdatedPCAppearance(uint32_t targetPcId, CommanderPkt * commanderAppearance, zmsg_t *replyMsg) {
+    #pragma pack(push, 1)
+    struct {
+        ServerPacketHeader header;
+        uint32_t targetPcId;
+        CommanderPkt commanderAppearance;
+    } replyPacket;
+    #pragma pack(pop)
+
+    PacketType packetType = ZC_UPDATED_PCAPPEARANCE;
+    CHECK_SERVER_PACKET_SIZE(replyPacket, packetType);
+
+    BUILD_REPLY_PACKET(replyPacket, replyMsg)
+    {
+        serverPacketHeaderInit(&replyPacket.header, packetType);
+        replyPacket.targetPcId = targetPcId;
+        replyPacket.commanderAppearance = *commanderAppearance;
+    }
+}
+
+void zoneBuilderPcAttackState(uint32_t targetPcId, uint8_t unk1, uint8_t isAttacking, zmsg_t *replyMsg) {
+    #pragma pack(push, 1)
+    struct {
+        ServerPacketHeader header;
+        uint32_t targetPcId;
+        uint8_t unk1;
+        uint8_t isAttacking;
+    } replyPacket;
+    #pragma pack(pop)
+
+    PacketType packetType = ZC_PC_ATKSTATE;
+    CHECK_SERVER_PACKET_SIZE(replyPacket, packetType);
+
+    BUILD_REPLY_PACKET(replyPacket, replyMsg)
+    {
+        serverPacketHeaderInit(&replyPacket.header, packetType);
+        replyPacket.targetPcId = targetPcId;
+        replyPacket.unk1 = unk1;
+        replyPacket.isAttacking = isAttacking;
+    }
+}
+
+

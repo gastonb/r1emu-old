@@ -17,6 +17,7 @@
 #pragma once
 
 #include "R1EMU.h"
+#include "common/commander/inventory.h"
 
 #define COMMANDER_NAME_SIZE 64
 #define COMMANDER_FAMILY_NAME_SIZE 64
@@ -33,7 +34,7 @@ typedef struct CommanderEquipment {
     uint32_t body_armor;
     uint32_t gloves;
     uint32_t boots;
-    uint32_t itemUnk2;
+    uint32_t helmet;
     uint32_t bracelet;
     uint32_t weapon;
     uint32_t shield;
@@ -64,18 +65,18 @@ typedef struct {
     uint16_t i_1;
     uint16_t i_2;
     uint16_t i_3;
-    uint64_t i_4;
+    uint16_t i_4;
     uint16_t i_5;
     uint16_t i_6;
     uint16_t i_7;
     uint16_t i_8;
-    uint64_t i_9;
+    uint16_t i_9;
     uint16_t i_10;
     uint16_t i_11;
     uint16_t i_12;
     uint16_t i_13;
     uint16_t i_14;
-    uint64_t i_15;
+    uint16_t i_15;
     uint16_t i_16;
     uint16_t i_17;
     uint16_t i_18;
@@ -125,6 +126,11 @@ typedef struct CommanderInfo
     uint16_t unk6;
     uint16_t unk7;
 } CommanderInfo;
+
+typedef struct Commander {
+    CommanderInfo commander;
+    Inventory inventory;
+} Commander;
 #pragma pack(pop)
 
 typedef enum CommanderJobId

@@ -17,6 +17,8 @@
 #include "common/packet/packet.h"
 #include "common/server/worker.h"
 #include "common/commander/commander.h"
+#include "common/commander/inventory.h"
+#include "common/item/item.h"
 #include "common/packet/packet_stream.h"
 #include "common/redis/fields/redis_game_session.h"
 #include "common/redis/fields/redis_socket_session.h"
@@ -340,17 +342,25 @@ barrackHandlerStartBarrack(
 
     // Get list of Commanders for this AccountId
 
-
-    CommanderBarrackInfo * commanders;
+    Commander *commanders;
+    CommanderInfo *commandersInfo;
 
     dbg("accountId: %11x", session->socket.accountId);
 
-    int commandersCount = mySqlGetCommandersByAccountId(self->sqlConn, session->socket.accountId, &commanders);
+    int commandersCount = mySqlGetCommandersByAccountId(self->sqlConn, session->socket.accountId, &commandersInfo);
 
     if (commandersCount == -1) {
         // Error
         /// TODO
         return PACKET_HANDLER_ERROR;
+    } else {
+        if ((commanders = malloc(sizeof(Commander) * commandersCount)) == NULL) {
+            return PACKET_HANDLER_ERROR;
+        }
+        // Iterate and populate commanders;
+        for (int i = 0; i < commandersCount; i++) {
+            commanders[i].commander = commandersInfo[i];
+        }
     }
 
 
@@ -507,6 +517,30 @@ static PacketHandlerState barrackHandlerCommanderCreate(
 
     CommanderInfo *commanderInfo = &session->game.commanderSession.currentCommander;
     CommanderPkt *commander = &commanderInfo->base;
+
+    // TEST CODE
+    Item newItem;
+    newItem.itemId = 2;
+    newItem.amount = 1;
+    newItem.itemType = 10;
+    dbg("newItem.itemId %d", newItem.itemId);
+    //session->game.commanderSession.inventory.items = zhash_new();
+    inventoryAddItem(&session->game.commanderSession.inventory, &newItem);
+
+    dbg("Size of inventory: %zu", zhash_size(session->game.commanderSession.inventory.items));
+    dbg("Size of inventory: %d", zhash_size(session->game.commanderSession.inventory.items));
+
+    Item newItem2;
+    newItem2.itemId = 3;
+    newItem2.amount = 2;
+    newItem2.itemType = 11;
+
+    inventoryAddItem(&session->game.commanderSession.inventory, &newItem2);
+
+    dbg("Size of inventory: %zu", zhash_size(session->game.commanderSession.inventory.items));
+    dbg("Size of inventory: %d", zhash_size(session->game.commanderSession.inventory.items));
+
+    // END TEST CODE
 
     // Validate all parameters
 

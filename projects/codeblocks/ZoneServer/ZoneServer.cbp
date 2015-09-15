@@ -115,9 +115,17 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../../../src/common/item/item.h" />
+		<Unit filename="../../../src/common/item/item_attribute.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../../../src/common/item/item_attribute.h" />
 		<Unit filename="../../../src/common/mysql/fields/mysql_account_data.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="../../../src/common/mysql/fields/mysql_commander.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../../../src/common/mysql/fields/mysql_commander.h" />
 		<Unit filename="../../../src/common/mysql/fields/mysql_session.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -138,6 +146,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../../../src/common/packet/packet_type.h" />
+		<Unit filename="../../../src/common/redis/fields/redis_account_session.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../../../src/common/redis/fields/redis_account_session.h" />
 		<Unit filename="../../../src/common/redis/fields/redis_game_session.c">
 			<Option compilerVar="CC" />
 		</Unit>

@@ -14,26 +14,26 @@
 #include "commander.h"
 
 void commanderEquipmentInit(CommanderEquipment *equipment) {
-    equipment->head_top = 2;
-    equipment->head_middle = 2;
-    equipment->itemUnk1 = 4;
-    equipment->body_armor = 0x81a9d;
-    equipment->gloves = 6;
-    equipment->boots = 7;
-    equipment->itemUnk2 = 0x2710;
-    equipment->bracelet = 0x2af8;
-    equipment->weapon = 0x3118d;
-    equipment->shield = 0x98967c;
-    equipment->costume = 4;
-    equipment->itemUnk3 = 9;
-    equipment->itemUnk4 = 9;
-    equipment->itemUnk5 = 4;
-    equipment->leg_armor = 0x7f38d;
-    equipment->itemUnk6 = 9;
-    equipment->itemUnk7 = 9;
-    equipment->ring_left = 9;
-    equipment->ring_right = 9;
-    equipment->necklace = 0xa;
+    equipment->head_top = 2; // NoHat
+    equipment->head_middle = 2; //NoHat
+    equipment->itemUnk1 = 4; //NoOuter
+    equipment->body_armor = 8;
+    equipment->gloves = 6; //NoGloves
+    equipment->boots = 7; //NoBoots
+    equipment->helmet = 10000; // NoHelmet
+    equipment->bracelet = 11000; //NoArmband
+    equipment->weapon = 9999996; // NoWeapon
+    equipment->shield = 9999996; // NoWeapon
+    equipment->costume = 4; //NoOuter
+    equipment->itemUnk3 = 9; //NoRing
+    equipment->itemUnk4 = 9; //NoRing
+    equipment->itemUnk5 = 4; //NoOuter
+    equipment->leg_armor = 8; // NoPants
+    equipment->itemUnk6 = 9; //NoRing
+    equipment->itemUnk7 = 9; //NoRing
+    equipment->ring_left = 9; //NoRing
+    equipment->ring_right = 9; //NoRing
+    equipment->necklace = 10; //NoNeck
 }
 
 void commanderInit(CommanderPkt *commander) {
@@ -79,7 +79,7 @@ void commanderEquipmentPrint(CommanderEquipment *equipment) {
     dbg("body_armor = %d (%x)", equipment->body_armor, equipment->body_armor);
     dbg("gloves = %d (%x)", equipment->gloves, equipment->gloves);
     dbg("boots = %d (%x)", equipment->boots, equipment->boots);
-    dbg("itemUnk2 = %d (%x)", equipment->itemUnk2, equipment->itemUnk2);
+    dbg("helmet = %d (%x)", equipment->helmet, equipment->helmet);
     dbg("bracelet = %d (%x)", equipment->bracelet, equipment->bracelet);
     dbg("weapon = %d (%x)", equipment->weapon, equipment->weapon);
     dbg("shield = %d (%x)", equipment->shield, equipment->shield);
